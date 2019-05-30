@@ -1,0 +1,16 @@
+nav:
+  home: HOME
+  tags: TAGS
+  archives: ARCHIVES
+  about: ABOUT
+  search: SEARCH
+  apps: APPS
+
+post:
+  postTime: Post
+  tags: Tags
+  visit: Visit
+  donate: donate
+
+search:
+  search: search
