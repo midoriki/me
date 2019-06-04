@@ -17,6 +17,6 @@
     "hexo-server": "^0.3.3"
   },
   "scripts": {
-    "build:deploy": "hexo generate && cp -RT public ../app/me"
+    "build:deploy": "hexo generate && rm -rf ../app/me/* && cp -RT public ../app/me"
   }
 }
