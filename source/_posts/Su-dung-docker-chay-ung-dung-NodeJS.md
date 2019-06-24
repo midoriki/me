@@ -1,12 +1,12 @@
 ---
-title: Sử dụng Docker để phục vụ ứng dụng NodeJS trên server
-date: 2019-06-18 14:34:17
-tags: docker nodejs nginx
+title: Sử dụng Docker để chạy ứng dụng NodeJS
+date: 2019-06-24 12:06:31
+tags: docker nodejs
 ---
 
 ## Mục đích
 
-Ban đầu khi blog này được triển khai trên server mình cài đặt thủ công tất cả các thành phần:
+Ban đầu khi blog này được triển khai trên server, mình đã cài đặt thủ công tất cả các thành phần cần thiết:
 
 + NodeJS
 + PM2
@@ -119,14 +119,14 @@ networks:
     driver: bridge
 ```
 
-Chúng ta đã định nghĩa 3 services theo như thiết kế bên trên, mở 2 cổng 80 và 443 trên service nginx để giao tiếp với web request.
+Chúng ta đã định nghĩa 3 services theo như thiết kế bên trên, mở 2 cổng 80 và trên service nginx để giao tiếp với web request.
 
 Điểm đặc biệt đó là chúng ta mount 2 volume vào service nginx:
 
 + /etc/letsencrypt: mount thư mục letsencrypt chứa SSL key vào nginx container
 + nginx.conf: file cấu hình cho nginx để làm cầu nối giữa web request và ứng dụng nodejs
 
-File cấu hình nginx như sau
+### Cấu hình nginx
 
 ```nginx
 server {
@@ -136,39 +136,25 @@ server {
 server {
     listen 80;
     server_name midoriki.com www.midoriki.com;
-    return 301 https://$host$request_uri;
+    return https://$host$request_uri;
 }
 server {
-    listen 443 ssl http2;
+    listen ssl http2;
     server_name midoriki.com www.midoriki.com;
-    if ($host != "midoriki.com") {
-        return 301 https://midoriki.com$request_uri;
-    }
     ssl_certificate /etc/nginx/ssl/midoriki.com/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/midoriki.com/privkey.pem;
-    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers 'EECDH+AESGCM:EDH+AESGCM:AES256+EECDH;AES256+EDH';
     location / {
         proxy_pass http://app:8080;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-NginX-Proxy true;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_redirect off;
-        proxy_http_version 1.1;
-        proxy_cache_bypass $http_upgrade;
-        add_header Strict-Transport-Security: max-age=31536000;
-        add_header X-Frame-Options: sameorigin;
+        .
+        . <other options here>
+        .
     }
 }
 ```
 
 Cấu hình này thỏa mãn các tác vụ sau:
 
-+ Trả về 404 cho tất cả các request k trùng với server name bên dưới.
++ Trả về cho tất cả các request k trùng với server name bên dưới.
 + Chuyển hướng http sang https
 + Thiết lập SSL với public và secret key từ Letsencrypt
 + Nhận request https và chuyển sang cho ứng dụng nodejs - ở đây là phần
@@ -177,4 +163,58 @@ Cấu hình này thỏa mãn các tác vụ sau:
 proxy_pass http://app:8080;
 ```
 
-với app là tên service định nghĩa ở file docker-compose.yml.
+với app là tên service mà chúng ta đặt ứng dụng nodejs, định nghĩa ở file docker-compose.yml.
+
+## Triển khai
+
+Sau khi đã hoàn thành các cài đặt, chúng ta có thể tiến hành deploy hệ thống.
+
+Trước hết chúng ta cần cài đặt docker trên server
+
+```bash
+sudo apt-get update
+
+sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+sudo yum install docker-ce docker-ce-cli containerd.io
+
+sudo systemctl start docker
+
+# add current user into docker group, to bypass sudo when run docker command
+sudo groupadd dockerdocker $USER
+
+# enable docker on startup
+sudo systemctl enable docker
+
+# verify docker was installed successfully
+docker info
+```
+
+Sau đó tiếp tục cài đặt docker-compose
+
+```
+sudo yum install -y python python-pip
+
+pip install --user docker-compose
+
+docker-compose --version
+```
+
+Tiếp theo, chúng ta clone source code từ github và khởi chạy docker-compose
+
+```bash
+cd <somewhere you want>
+
+git clone git@github.com:midoriki/midoriki.git
+
+cd midoriki
+
+docker-compose up -d
+
+# check if docker containers are running
+docker ps
+```
+
+Như vậy chúng ta đã cài đặt thành công một hệ thống chạy trên docker.
