@@ -1,5 +1,5 @@
 ---
-title: Regex basic
+title: Regex cơ bản
 catalog: true
 date: 2018-06-11 15:22:42
 subtitle:

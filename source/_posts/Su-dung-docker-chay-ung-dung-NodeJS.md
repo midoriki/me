@@ -1,7 +1,12 @@
 ---
 title: Sử dụng Docker để chạy ứng dụng NodeJS
 date: 2019-06-24 12:06:31
-tags: docker nodejs
+tags:
+  - docker
+  - nodejs
+  - letsencrypt
+  - nginx
+  - pm2
 ---
 
 ## Mục đích
